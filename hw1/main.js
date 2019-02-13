@@ -11,15 +11,20 @@ if (!sourcePath) {
 const entryPoint = path.join(__dirname, sourcePath);
 const distPoint = path.join(__dirname, distPath);
 
-if (!fs.existsSync(entryPoint)) {
-  throw Error(`Source path is not exist: ${entryPoint}`);
-}
+fs.access(entryPoint, error => {
+  if (error) throw Error(`Source path is not exist or not available: ${entryPoint}`);
 
-const searchRecursive = require('./searchRecursive');
-const catalogify = require('./catalogify')(distPoint);
+  const searchRecursive = require('./searchRecursive');
+  const catalogify = require('./catalogify')(distPoint);
 
-if (!fs.existsSync(distPoint)) {
-  fs.mkdirSync(distPoint);
-}
-
-searchRecursive(entryPoint, catalogify);
+  fs.access(distPoint, error => {
+    if (error) {
+      fs.mkdir(distPoint, error => {
+        if (error) throw error;
+        searchRecursive(entryPoint, catalogify);
+      });
+    } else {
+      searchRecursive(entryPoint, catalogify);
+    }
+  });
+});

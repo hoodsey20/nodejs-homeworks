@@ -8,21 +8,25 @@ const catalogify = (distFolder) => {
     const distPath = path.join(distCategory, name);
 
     var makeCopy = () => {
-      if (!fs.existsSync(distPath)) {
-        fs.link(filePath, distPath, (error) => {
-          if (error) throw error;
-        });
-      }
+      fs.access(distPath, error => {
+        if (error) {
+          fs.link(filePath, distPath, (error) => {
+            if (error) throw error;
+          });
+        }
+      });
     };
 
-    if (!fs.existsSync(distCategory)) {
-      fs.mkdir(distCategory, (error) => {
-        if (error) throw error;
+    fs.access(distCategory, error => {
+      if (error) {
+        fs.mkdir(distCategory, (error) => {
+          if (error) throw error;
+          makeCopy();
+        });
+      } else {
         makeCopy();
-      });
-    } else {
-      makeCopy();
-    }
+      }
+    });
   };
 };
 
