@@ -8,25 +8,23 @@ const catalogify = (distFolder) => {
     const distPath = path.join(distCategory, name);
 
     var makeCopy = () => {
-      fs.access(distPath, error => {
-        if (error) {
-          fs.link(filePath, distPath, (error) => {
-            if (error) throw error;
-          });
+      if (!fs.existsSync(distPath)) {
+        try {
+          fs.linkSync(filePath, distPath);
+        } catch (error) {
+          throw error;
         }
-      });
+      }
     };
 
-    fs.access(distCategory, error => {
-      if (error) {
-        fs.mkdir(distCategory, (error) => {
-          if (error) throw error;
-          makeCopy();
-        });
-      } else {
-        makeCopy();
+    if (!fs.existsSync(distCategory)) {
+      try {
+        fs.mkdirSync(distCategory);
+      } catch (error) {
+        throw error;
       }
-    });
+    }
+    makeCopy();
   };
 };
 
