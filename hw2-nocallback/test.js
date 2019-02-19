@@ -2,38 +2,36 @@ const fs = require('mz/fs');
 const path = require('path');
 
 const folder = process.argv[2];
-const target = path.join(__dirname, folder);
-function checkExisting () {
-  return fs.exists(target);
-}
 
-async function check () {
-  let existing = await checkExisting();
-  console.log('TCL: existing', existing);
-}
-// check();
+const getFilesList = async (entry) => {
+  let filesList = [];
+  let queue = await fs.readdir(entry);
 
-const search = async () => {
-  const entry = await fs.readdir(target);
-  console.log('TCL: search -> entry', entry)
-  return entry.reverse();
-};
+  while (queue.length) {
+    const currentPath = path.join(entry, queue[0]);
+    const currentData = await fs.stat(currentPath);
 
-const searchP = async (entry) => {
-  const dirData = await fs.readdir(entry);
-	console.log('TCL: searchP -> dirData', dirData)
-  const p = dirData.map(async item => {
-    const filePath = path.join(entry, item);
-    const fileData = await fs.stat(filePath);
-		console.log('TCL: searchP -> fileData', fileData.isFile())
-    if (fileData.isFile()) {
-      return filePath;
+    if (currentData.isFile()) {
+      const key = path.basename(queue[0])
+        .trim()
+        .replace('.', '')[0]
+        .toUpperCase();
+      filesList.push({ [key]: currentPath });
     }
-  });
-  const res = await Promise.all(p);
 
-	console.log('TCL: search -> res', res)
+    if (currentData.isDirectory()) {
+      const folderContent = await fs.readdir(currentPath);
+      folderContent.forEach(item => {
+        const relativePath = path.relative(entry, currentPath);
+        queue.push(`${relativePath}/${item}`);
+      });
+    }
 
+    queue.shift();
+  }
+
+  return filesList;
 };
 
-searchP(target);
+getFilesList(folder)
+  .then(res => console.log(res));
